@@ -1,616 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>EduRate</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-  :root {
-    --bg: #0a0a0f;
-    --surface: #13131a;
-    --surface2: #1c1c27;
-    --border: #2a2a3a;
-    --accent: #6c63ff;
-    --accent2: #ff6584;
-    --accent3: #43e97b;
-    --text: #f0f0f8;
-    --muted: #7070a0;
-    --font-head: 'Syne', sans-serif;
-    --font-body: 'DM Sans', sans-serif;
-    --radius: 14px;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font-body);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* ── NOISE OVERLAY ── */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 9999;
-    opacity: 0.4;
-  }
-
-  /* ── SCREENS ── */
-  .screen { display: none; min-height: 100vh; animation: fadeIn .35s ease; }
-  .screen.active { display: flex; flex-direction: column; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-
-  /* ══════════════════════════════
-     LANDING
-  ══════════════════════════════ */
-  #screen-landing {
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 40px 24px;
-    background: radial-gradient(ellipse 80% 60% at 50% 0%, #1a1035 0%, transparent 70%);
-  }
-
-  .hero-badge {
-    display: inline-block;
-    font-family: var(--font-body);
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: var(--accent);
-    border: 1px solid #6c63ff44;
-    background: #6c63ff11;
-    padding: 6px 14px;
-    border-radius: 99px;
-    margin-bottom: 28px;
-  }
-
-  .hero-title {
-    font-family: var(--font-head);
-    font-size: clamp(42px, 8vw, 80px);
-    font-weight: 800;
-    line-height: 1.05;
-    letter-spacing: -0.03em;
-    margin-bottom: 20px;
-  }
-
-  .hero-title span { color: var(--accent); }
-  .hero-title em { color: var(--accent2); font-style: normal; }
-
-  .hero-sub {
-    font-size: 16px;
-    color: var(--muted);
-    max-width: 500px;
-    margin: 0 auto 48px;
-    line-height: 1.7;
-    font-weight: 300;
-  }
-
-  .role-cards {
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  .role-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 32px 28px;
-    width: 220px;
-    cursor: pointer;
-    transition: all .25s;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .role-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    transition: opacity .25s;
-  }
-
-  .role-card.student::before { background: radial-gradient(circle at 30% 30%, #6c63ff22, transparent 60%); }
-  .role-card.teacher::before { background: radial-gradient(circle at 30% 30%, #ff658422, transparent 60%); }
-
-  .role-card:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 20px 40px #00000055; }
-  .role-card.teacher:hover { border-color: var(--accent2); }
-  .role-card:hover::before { opacity: 1; }
-
-  .role-icon { font-size: 36px; margin-bottom: 14px; }
-  .role-label { font-family: var(--font-head); font-size: 18px; font-weight: 700; margin-bottom: 8px; }
-  .role-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
-
-  /* ══════════════════════════════
-     AUTH
-  ══════════════════════════════ */
-  #screen-auth {
-    align-items: center;
-    justify-content: center;
-    padding: 40px 24px;
-    background: radial-gradient(ellipse 60% 50% at 50% 10%, #0d0d2b 0%, transparent 70%);
-  }
-
-  .auth-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 40px;
-    width: 100%;
-    max-width: 400px;
-  }
-
-  .auth-back {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: var(--muted);
-    cursor: pointer;
-    margin-bottom: 28px;
-    width: fit-content;
-    transition: color .2s;
-  }
-  .auth-back:hover { color: var(--text); }
-
-  .auth-title {
-    font-family: var(--font-head);
-    font-size: 26px;
-    font-weight: 700;
-    margin-bottom: 6px;
-  }
-
-  .auth-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
-
-  .tab-row {
-    display: flex;
-    gap: 4px;
-    background: var(--bg);
-    padding: 4px;
-    border-radius: 10px;
-    margin-bottom: 24px;
-  }
-
-  .tab-btn {
-    flex: 1;
-    padding: 9px;
-    border: none;
-    background: none;
-    color: var(--muted);
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 500;
-    border-radius: 7px;
-    cursor: pointer;
-    transition: all .2s;
-  }
-  .tab-btn.active { background: var(--surface2); color: var(--text); }
-
-  .field { margin-bottom: 16px; }
-  .field label { display: block; font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; margin-bottom: 8px; }
-  .field input, .field select {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
-    color: var(--text);
-    font-family: var(--font-body);
-    font-size: 14px;
-    outline: none;
-    transition: border-color .2s;
-  }
-  .field input:focus, .field select:focus { border-color: var(--accent); }
-  .field select option { background: var(--surface); }
-
-  .btn-primary {
-    width: 100%;
-    padding: 14px;
-    background: var(--accent);
-    border: none;
-    border-radius: 10px;
-    color: #fff;
-    font-family: var(--font-head);
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all .2s;
-    margin-top: 8px;
-    letter-spacing: .02em;
-  }
-  .btn-primary:hover { background: #7d75ff; transform: translateY(-1px); box-shadow: 0 8px 24px #6c63ff44; }
-  .btn-primary.pink { background: var(--accent2); }
-  .btn-primary.pink:hover { background: #ff7a96; box-shadow: 0 8px 24px #ff658444; }
-
-  .auth-note { font-size: 12px; color: var(--muted); text-align: center; margin-top: 16px; }
-
-  /* ══════════════════════════════
-     DASHBOARD SHELL
-  ══════════════════════════════ */
-  .dash-shell {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-  }
-
-  .topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 28px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-
-  .topbar-logo { font-family: var(--font-head); font-size: 20px; font-weight: 800; }
-  .topbar-logo span { color: var(--accent); }
-
-  .topbar-user {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    color: var(--muted);
-  }
-
-  .avatar {
-    width: 34px; height: 34px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-head);
-    font-size: 14px;
-    font-weight: 700;
-    color: #fff;
-  }
-
-  .logout-btn {
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    font-size: 12px;
-    padding: 6px 12px;
-    border-radius: 7px;
-    cursor: pointer;
-    font-family: var(--font-body);
-    transition: all .2s;
-  }
-  .logout-btn:hover { border-color: var(--accent2); color: var(--accent2); }
-
-  .dash-content { flex: 1; padding: 32px 28px; max-width: 1000px; margin: 0 auto; width: 100%; }
-
-  .dash-greeting { font-family: var(--font-head); font-size: 28px; font-weight: 700; margin-bottom: 6px; }
-  .dash-greeting span { color: var(--accent); }
-  .dash-sub { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
-
-  /* ── STATS ROW ── */
-  .stats-row { display: flex; gap: 16px; margin-bottom: 32px; flex-wrap: wrap; }
-
-  .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px 24px;
-    flex: 1;
-    min-width: 140px;
-    transition: border-color .2s;
-  }
-  .stat-card:hover { border-color: var(--accent); }
-
-  .stat-value { font-family: var(--font-head); font-size: 32px; font-weight: 800; margin-bottom: 4px; }
-  .stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; }
-
-  /* ── SECTION ── */
-  .section-title {
-    font-family: var(--font-head);
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: .04em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-
-  /* ── TEACHER CARDS ── */
-  .teachers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
-
-  .teacher-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    cursor: pointer;
-    transition: all .25s;
-    position: relative;
-    overflow: hidden;
-  }
-  .teacher-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform .3s;
-  }
-  .teacher-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 12px 30px #00000055; }
-  .teacher-card:hover::before { transform: scaleX(1); }
-
-  .tc-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-  .tc-avatar {
-    width: 42px; height: 42px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #6c63ff55, #ff658455);
-    border: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-head);
-    font-size: 16px;
-    font-weight: 700;
-  }
-  .tc-name { font-family: var(--font-head); font-size: 15px; font-weight: 700; margin-bottom: 2px; }
-  .tc-sub { font-size: 12px; color: var(--muted); }
-
-  .tc-stars { display: flex; gap: 3px; margin-bottom: 12px; }
-  .star { font-size: 14px; }
-
-  .tc-dims { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .dim-pill {
-    background: var(--bg);
-    border-radius: 7px;
-    padding: 6px 10px;
-    font-size: 11px;
-    color: var(--muted);
-  }
-  .dim-pill span { color: var(--text); font-weight: 500; }
-
-  .tc-rate-btn {
-    width: 100%;
-    margin-top: 14px;
-    padding: 9px;
-    background: #6c63ff15;
-    border: 1px solid #6c63ff44;
-    border-radius: 8px;
-    color: var(--accent);
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all .2s;
-  }
-  .tc-rate-btn:hover { background: var(--accent); color: #fff; }
-
-  /* ── MODAL ── */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: #00000088;
-    backdrop-filter: blur(6px);
-    z-index: 1000;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    animation: fadeIn .2s ease;
-  }
-  .modal-overlay.open { display: flex; }
-
-  .modal {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 36px;
-    width: 100%;
-    max-width: 480px;
-    max-height: 90vh;
-    overflow-y: auto;
-    animation: slideUp .25s ease;
-  }
-  @keyframes slideUp { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: none; } }
-
-  .modal-title { font-family: var(--font-head); font-size: 22px; font-weight: 700; margin-bottom: 4px; }
-  .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
-
-  .rating-group { margin-bottom: 22px; }
-  .rating-label { font-size: 13px; font-weight: 500; margin-bottom: 10px; display: flex; justify-content: space-between; }
-  .rating-label span { color: var(--accent); font-family: var(--font-head); font-size: 16px; font-weight: 700; }
-
-  .slider {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 6px;
-    border-radius: 3px;
-    background: var(--bg);
-    outline: none;
-    cursor: pointer;
-  }
-  .slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 0 3px #6c63ff33;
-    transition: box-shadow .2s;
-  }
-  .slider::-webkit-slider-thumb:hover { box-shadow: 0 0 0 6px #6c63ff33; }
-
-  .remark-area {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
-    color: var(--text);
-    font-family: var(--font-body);
-    font-size: 14px;
-    resize: vertical;
-    min-height: 80px;
-    outline: none;
-    transition: border-color .2s;
-    margin-top: 4px;
-  }
-  .remark-area:focus { border-color: var(--accent); }
-
-  .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
-  .btn-cancel {
-    flex: 1;
-    padding: 12px;
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: var(--muted);
-    font-family: var(--font-body);
-    font-size: 14px;
-    cursor: pointer;
-    transition: all .2s;
-  }
-  .btn-cancel:hover { border-color: var(--accent2); color: var(--accent2); }
-  .btn-submit { flex: 2; }
-
-  /* ── TOAST ── */
-  .toast {
-    position: fixed;
-    bottom: 28px;
-    right: 28px;
-    background: var(--surface2);
-    border: 1px solid var(--accent3);
-    border-radius: 12px;
-    padding: 14px 20px;
-    font-size: 14px;
-    color: var(--accent3);
-    z-index: 9998;
-    transform: translateY(80px);
-    opacity: 0;
-    transition: all .35s cubic-bezier(.34,1.56,.64,1);
-    max-width: 320px;
-  }
-  .toast.show { transform: translateY(0); opacity: 1; }
-  .toast.error { border-color: var(--accent2); color: var(--accent2); }
-
-  /* ── TEACHER DASHBOARD ── */
-  .class-list { display: flex; flex-direction: column; gap: 12px; }
-
-  .class-item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-
-  .class-info { flex: 1; }
-  .class-name { font-family: var(--font-head); font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-  .class-meta { font-size: 12px; color: var(--muted); }
-
-  .class-scores { display: flex; gap: 12px; flex-wrap: wrap; }
-  .score-badge {
-    background: var(--bg);
-    border-radius: 8px;
-    padding: 6px 12px;
-    font-size: 12px;
-    color: var(--muted);
-    text-align: center;
-  }
-  .score-badge strong { display: block; font-family: var(--font-head); font-size: 18px; font-weight: 700; color: var(--text); }
-
-  .btn-rate-class {
-    background: #ff658415;
-    border: 1px solid #ff658444;
-    border-radius: 8px;
-    color: var(--accent2);
-    padding: 9px 16px;
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all .2s;
-    white-space: nowrap;
-  }
-  .btn-rate-class:hover { background: var(--accent2); color: #fff; }
-
-  /* ── MY RATINGS ── */
-  .my-ratings { display: flex; flex-direction: column; gap: 12px; }
-
-  .rating-row {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-
-  .rating-row-info { flex: 1; }
-  .rating-row-name { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
-  .rating-row-remark { font-size: 12px; color: var(--muted); font-style: italic; }
-  .rating-row-scores { display: flex; gap: 8px; flex-wrap: wrap; }
-
-  .mini-score {
-    font-size: 11px;
-    color: var(--muted);
-    background: var(--bg);
-    padding: 4px 8px;
-    border-radius: 5px;
-  }
-  .mini-score b { color: var(--accent); }
-
-  /* ── RESPONSIVE ── */
-  @media (max-width: 600px) {
-    .dash-content { padding: 20px 16px; }
-    .topbar { padding: 14px 16px; }
-    .modal { padding: 24px; }
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ED You Rate</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
 <!-- ══════════════ LANDING ══════════════ -->
 <div id="screen-landing" class="screen active">
+  <div class="landing-bg-marquee" aria-hidden="true">
+    <div class="landing-bg-row">
+      <div class="ticker-track teachers" id="teachers-track">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+    <div class="landing-bg-row second">
+      <div class="ticker-track classes" id="classes-track">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+  </div>
   <div class="hero-badge">TRIKON 3.0 · Open Innovation</div>
-  <h1 class="hero-title">Edu<span>Rate</span><br/>Two-<em>way</em> feedback</h1>
-  <p class="hero-sub">Students rate teachers anonymously. Teachers rate classes publicly. Real accountability — in both directions.</p>
+  <h1 class="hero-title"><span class="brand-ed">Ed</span><span class="hl">You</span><span class="hl2">Rate</span></h1>
+  <p class="hero-sub hero-brand-sub">Education you rate.</p>
   <div class="role-cards">
     <div class="role-card student" onclick="selectRole('student')">
       <div class="role-icon">🎓</div>
       <div class="role-label">I'm a Student</div>
-      <div class="role-desc">Rate teachers & see what others say before choosing electives.</div>
+      <div class="role-desc">Rate teachers anonymously & see class reviews.</div>
     </div>
     <div class="role-card teacher" onclick="selectRole('teacher')">
       <div class="role-icon">🧑‍🏫</div>
       <div class="role-label">I'm a Teacher</div>
-      <div class="role-desc">Rate your classes and see how your sections are performing.</div>
+      <div class="role-desc">Rate your classes & see aggregated student feedback.</div>
     </div>
   </div>
+  <p class="hero-sub hero-sub-bottom">Where Your Voice and Feedback Drives Real Change.</p>
+  <p class="hero-sub hero-sub-bottom">Shape your college and promote it toward growth. Not just live by it.</p>
+
 </div>
 
 <!-- ══════════════ AUTH ══════════════ -->
@@ -618,599 +48,274 @@
   <div class="auth-box">
     <div class="auth-back" onclick="goTo('landing')">← Back</div>
     <div class="auth-title" id="auth-title">Join as Student</div>
-    <div class="auth-sub" id="auth-sub">Create an account or sign in</div>
+    <div class="auth-sub" id="auth-sub">Sign in or create an account</div>
 
     <div class="tab-row">
       <button class="tab-btn active" onclick="switchTab('login')">Sign In</button>
       <button class="tab-btn" onclick="switchTab('signup')">Sign Up</button>
     </div>
 
-    <!-- LOGIN FIELDS -->
+    <!-- LOGIN -->
     <div id="login-fields">
-      <div class="field">
-        <label>Email</label>
-        <input type="email" id="login-email" placeholder="you@college.edu" />
-      </div>
-      <div class="field">
-        <label>Password</label>
-        <input type="password" id="login-password" placeholder="••••••••" />
-      </div>
-      <button class="btn-primary" id="login-btn" onclick="handleLogin()">Sign In →</button>
+      <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="you@college.edu"/></div>
+      <div class="field"><label>Password</label><input type="password" id="login-password" placeholder="••••••••"/></div>
+      <button class="btn btn-primary" id="login-btn" onclick="handleLogin()">Sign In →</button>
     </div>
 
-    <!-- SIGNUP FIELDS -->
+    <!-- SIGNUP -->
     <div id="signup-fields" style="display:none">
-      <div class="field">
-        <label>Full Name</label>
-        <input type="text" id="signup-name" placeholder="Your name" />
+      <div class="field"><label>Full Name</label><input type="text" id="signup-name" placeholder="Your full name"/></div>
+      <div class="field"><label>Email</label><input type="email" id="signup-email" placeholder="you@college.edu"/></div>
+      <div class="field"><label>Password</label><input type="password" id="signup-password" placeholder="Min 6 characters"/></div>
+      <div class="field-row">
+        <div class="field">
+          <label>Course</label>
+          <select id="signup-course">
+            <option value="">Select course</option>
+            <option>B.Tech</option>
+            <option>B.Pharma</option>
+            <option>BCA</option>
+            <option>MCA</option>
+            <option>MBA</option>
+            <option>M.Tech</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Branch</label>
+          <select id="signup-branch">
+            <option value="">Select branch</option>
+            <option>CSE</option>
+            <option>ECE</option>
+            <option>AI/ML</option>
+            <option>IT</option>
+            <option>Mechanical</option>
+            <option>Civil</option>
+            <option>Electrical</option>
+          </select>
+        </div>
       </div>
-      <div class="field">
-        <label>Email</label>
-        <input type="email" id="signup-email" placeholder="you@college.edu" />
+      <div id="class-selector-fields">
+        <div class="field-row">
+          <div class="field">
+            <label>Semester Type</label>
+            <select id="signup-sem" onchange="updateClassCode()">
+              <option value="">Select</option>
+              <option value="O">Odd Semester</option>
+              <option value="E">Even Semester</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Group</label>
+            <select id="signup-group" onchange="updateClassCode()">
+              <option value="">Select</option>
+              <option value="P">Physics Group</option>
+              <option value="C">Chemistry Group</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Section (01 – 12)</label>
+          <select id="signup-section" onchange="updateClassCode()">
+            <option value="">Select section</option>
+            <option value="01">01</option>
+            <option value="02">02</option>
+            <option value="03">03</option>
+            <option value="04">04</option>
+            <option value="05">05</option>
+            <option value="06">06</option>
+            <option value="07">07</option>
+            <option value="08">08</option>
+            <option value="09">09</option>
+            <option value="10">10</option>
+            <option value="11">11</option>
+            <option value="12">12</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Class Code (auto-generated)</label>
+          <input type="text" id="signup-class-code" readonly placeholder="e.g. EC-09" style="background:var(--surface2);color:var(--accent);font-family:var(--font-head);font-weight:700;letter-spacing:.08em;"/>
+        </div>
       </div>
-      <div class="field">
-        <label>Password</label>
-        <input type="password" id="signup-password" placeholder="••••••••" />
-      </div>
-      <div class="field" id="dept-field" style="display:none">
-        <label>Department</label>
-        <input type="text" id="signup-dept" placeholder="e.g. Computer Science" />
-      </div>
-      <button class="btn-primary" id="signup-btn" onclick="handleSignup()">Create Account →</button>
+      <button class="btn btn-primary" id="signup-btn" onclick="handleSignup()">Create Account →</button>
     </div>
 
-    <div class="auth-note">Demo mode — no real auth needed. Just fill any values.</div>
+    <div class="auth-note" id="auth-note">Demo: any valid email + password works</div>
   </div>
 </div>
 
 <!-- ══════════════ STUDENT DASHBOARD ══════════════ -->
 <div id="screen-student" class="screen">
-  <div class="dash-shell">
-    <div class="topbar">
-      <div class="topbar-logo">Edu<span>Rate</span></div>
-      <div class="topbar-user">
-        <div class="avatar" id="student-avatar">S</div>
-        <span id="student-name-display">Student</span>
-        <button class="logout-btn" onclick="logout()">Logout</button>
+  <div class="topbar">
+    <div class="topbar-logo">ED <span>You Rate</span></div>
+    <div class="topbar-right">
+      <button class="ach-btn" onclick="openAchievements()">🏆 Achievements</button>
+      <div class="avatar" id="s-avatar">S</div>
+      <div class="user-info">
+        <strong id="s-name">Student</strong>
+        <span id="s-course-branch">—</span>
       </div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
-    <div class="dash-content">
-      <div class="dash-greeting">Hey, <span id="s-greet">Student</span> 👋</div>
-      <div class="dash-sub">Rate your teachers anonymously. Your identity is never revealed.</div>
-
-      <div class="stats-row">
-        <div class="stat-card">
-          <div class="stat-value" id="s-stat-reviews">0</div>
-          <div class="stat-label">Reviews given</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">6</div>
-          <div class="stat-label">Teachers available</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">100%</div>
-          <div class="stat-label">Anonymous</div>
-        </div>
+  </div>
+  <div class="dash-content">
+    <div class="dash-greeting">Hey, <span id="s-greet">there</span> 👋</div>
+    <div class="dash-sub">Where your voice and feedback drives real change.</div>
+    <div class="smart-search-box">
+      <div class="smart-search-label">Ask for best teachers/classes</div>
+      <div class="smart-search-row">
+        <input id="s-smart-search" class="smart-search-input" type="text" placeholder="e.g. best environment for study, best helpful teacher" onkeydown="if(event.key==='Enter') runSmartSearch('student')"/>
+        <button class="smart-search-btn" onclick="runSmartSearch('student')">Search</button>
       </div>
+      <div class="smart-search-result" id="s-search-result"></div>
+    </div>
 
-      <div class="section-title">All Teachers</div>
-      <div class="teachers-grid" id="teachers-grid"></div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-value" id="s-stat-given">0</div><div class="stat-label">Reviews Given</div></div>
+      <div class="stat-card"><div class="stat-value" id="s-stat-teachers">0</div><div class="stat-label">Teachers</div></div>
+      <div class="stat-card"><div class="stat-value">100%</div><div class="stat-label">Anonymous</div></div>
+    </div>
 
-      <div class="section-title" style="margin-top:32px">My Reviews</div>
-      <div class="my-ratings" id="my-ratings-list">
-        <div style="color:var(--muted);font-size:14px;padding:16px 0;">No reviews yet. Rate a teacher above!</div>
-      </div>
+    <div class="section-title">All Teachers</div>
+    <div class="teachers-grid" id="teachers-grid">
+      <div class="empty-state">Loading teachers...</div>
+    </div>
+
+    <div class="section-title">Class Ratings</div>
+    <div class="classes-list" id="s-classes-list">
+      <div class="empty-state">Loading classes...</div>
+    </div>
+
+    <div class="section-title">My Reviews</div>
+    <div class="my-reviews-list" id="my-reviews-list">
+      <div class="empty-state">No reviews yet. Rate a teacher above!</div>
     </div>
   </div>
 </div>
 
 <!-- ══════════════ TEACHER DASHBOARD ══════════════ -->
 <div id="screen-teacher" class="screen">
-  <div class="dash-shell">
-    <div class="topbar">
-      <div class="topbar-logo">Edu<span>Rate</span></div>
-      <div class="topbar-user">
-        <div class="avatar" style="background:linear-gradient(135deg,#ff6584,#ff9966)" id="teacher-avatar">T</div>
-        <span id="teacher-name-display">Teacher</span>
-        <button class="logout-btn" onclick="logout()">Logout</button>
+  <div class="topbar">
+    <div class="topbar-logo">ED <span>You Rate</span></div>
+    <div class="topbar-right">
+      <button class="ach-btn" onclick="openAchievements()">🏆 Achievements</button>
+      <div class="avatar" style="background:linear-gradient(135deg,#ff6584,#f39c12)" id="t-avatar">T</div>
+      <div class="user-info">
+        <strong id="t-name">Teacher</strong>
+        <span id="t-dept">—</span>
       </div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
-    <div class="dash-content">
-      <div class="dash-greeting">Welcome, <span id="t-greet" style="color:var(--accent2)">Teacher</span> 🧑‍🏫</div>
-      <div class="dash-sub">See how students rate you & give feedback on your classes.</div>
-
-      <div class="stats-row" id="t-stats-row">
-        <div class="stat-card">
-          <div class="stat-value" id="t-stat-avg" style="color:var(--accent3)">—</div>
-          <div class="stat-label">Avg student rating</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="t-stat-reviews">0</div>
-          <div class="stat-label">Reviews received</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="t-stat-classes">3</div>
-          <div class="stat-label">Active classes</div>
-        </div>
+  </div>
+  <div class="dash-content">
+    <div class="dash-greeting" style="--accent:var(--accent2)">Welcome, <span id="t-greet" style="color:var(--accent2)">Prof</span> 🧑‍🏫</div>
+    <div class="dash-sub">Shape your college and promote it toward growth, not just live by it.</div>
+    <div class="smart-search-box">
+      <div class="smart-search-label">Find top classes/teachers by intent</div>
+      <div class="smart-search-row">
+        <input id="t-smart-search" class="smart-search-input" type="text" placeholder="e.g. most competitive class, best approachable teacher" onkeydown="if(event.key==='Enter') runSmartSearch('teacher')"/>
+        <button class="smart-search-btn" onclick="runSmartSearch('teacher')">Search</button>
       </div>
+      <div class="smart-search-result" id="t-search-result"></div>
+    </div>
 
-      <div class="section-title">My Student Ratings</div>
-      <div id="teacher-ratings-view" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:32px;">
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;" id="teacher-dim-scores"></div>
-        <div style="margin-top:20px;font-size:13px;color:var(--muted);font-style:italic;" id="teacher-remarks-list"></div>
-      </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-value" id="t-stat-avg" style="color:var(--accent3)">—</div><div class="stat-label">Avg Rating</div></div>
+      <div class="stat-card"><div class="stat-value" id="t-stat-reviews">0</div><div class="stat-label">Reviews Received</div></div>
+      <div class="stat-card"><div class="stat-value" id="t-stat-classes">0</div><div class="stat-label">Classes Rated</div></div>
+    </div>
 
-      <div class="section-title">Rate Your Classes</div>
-      <div class="class-list" id="class-list"></div>
+    <div class="section-title">My Student Feedback</div>
+    <div class="my-rating-card" id="t-feedback-card">
+      <div class="empty-state">No student reviews yet.</div>
+    </div>
+
+    <div class="section-title">My Classes</div>
+    <div class="classes-list" id="t-classes-list">
+      <div class="empty-state">No classes found.</div>
+    </div>
+
+    <div class="section-title">All Teachers (as seen by students)</div>
+    <div class="teachers-grid" id="t-teachers-grid">
+      <div class="empty-state">Loading...</div>
     </div>
   </div>
 </div>
 
 <!-- ══════════════ RATE TEACHER MODAL ══════════════ -->
-<div class="modal-overlay" id="rate-modal">
+<div class="modal-overlay" id="rate-teacher-modal">
   <div class="modal">
-    <div class="modal-title" id="modal-teacher-name">Rate Teacher</div>
-    <div class="modal-sub">Your feedback is anonymous — teacher won't know it was you.</div>
-
+    <div class="modal-title" id="rt-modal-title">Rate Teacher</div>
+    <div class="modal-sub">Anonymous — teacher will never know it was you.</div>
     <div class="rating-group">
-      <div class="rating-label">Subject Knowledge <span id="val-knowledge">3</span>/5</div>
-      <input type="range" class="slider" min="1" max="5" value="3" id="sl-knowledge" oninput="document.getElementById('val-knowledge').textContent=this.value"/>
+      <div class="rating-label">Subject Knowledge <span id="v-knowledge">3</span></div>
+      <input type="range" class="slider" min="1" max="5" value="3" id="sl-knowledge" oninput="document.getElementById('v-knowledge').textContent=this.value"/>
     </div>
     <div class="rating-group">
-      <div class="rating-label">Teaching Clarity <span id="val-clarity">3</span>/5</div>
-      <input type="range" class="slider" min="1" max="5" value="3" id="sl-clarity" oninput="document.getElementById('val-clarity').textContent=this.value"/>
+      <div class="rating-label">Teaching Clarity <span id="v-clarity">3</span></div>
+      <input type="range" class="slider" min="1" max="5" value="3" id="sl-clarity" oninput="document.getElementById('v-clarity').textContent=this.value"/>
     </div>
     <div class="rating-group">
-      <div class="rating-label">Approachability <span id="val-approach">3</span>/5</div>
-      <input type="range" class="slider" min="1" max="5" value="3" id="sl-approach" oninput="document.getElementById('val-approach').textContent=this.value"/>
+      <div class="rating-label">Approachability <span id="v-approach">3</span></div>
+      <input type="range" class="slider" min="1" max="5" value="3" id="sl-approach" oninput="document.getElementById('v-approach').textContent=this.value"/>
     </div>
     <div class="rating-group">
-      <div class="rating-label">Behaviour <span id="val-behaviour">3</span>/5</div>
-      <input type="range" class="slider" min="1" max="5" value="3" id="sl-behaviour" oninput="document.getElementById('val-behaviour').textContent=this.value"/>
+      <div class="rating-label">Behaviour <span id="v-behaviour">3</span></div>
+      <input type="range" class="slider" min="1" max="5" value="3" id="sl-behaviour" oninput="document.getElementById('v-behaviour').textContent=this.value"/>
     </div>
-
     <div class="field">
-      <label>Written Remark (optional)</label>
-      <textarea class="remark-area" id="remark-input" placeholder="Share your experience with this teacher..."></textarea>
+      <label>Remark (optional)</label>
+      <textarea class="field-input" id="rt-remark" placeholder="Share your honest experience..."></textarea>
     </div>
-
     <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('rate-modal')">Cancel</button>
-      <button class="btn-primary btn-submit" onclick="submitStudentReview()">Submit Review</button>
+      <button class="btn-cancel" onclick="closeModal('rate-teacher-modal')">Cancel</button>
+      <button class="btn btn-primary btn-submit" onclick="submitTeacherReview()">Submit Review</button>
     </div>
   </div>
 </div>
 
 <!-- ══════════════ RATE CLASS MODAL ══════════════ -->
-<div class="modal-overlay" id="class-modal">
+<div class="modal-overlay" id="rate-class-modal">
   <div class="modal">
-    <div class="modal-title" id="modal-class-name">Rate Class</div>
-    <div class="modal-sub">Your name will be visible to students and administration.</div>
-
+    <div class="modal-title" id="rc-modal-title">Rate Class</div>
+    <div class="modal-sub">Your name will be visible to students and admin.</div>
     <div class="rating-group">
-      <div class="rating-label">Engagement <span id="val-engage">3</span>/5</div>
-      <input type="range" class="slider" min="1" max="5" value="3" id="sl-engage" oninput="document.getElementById('val-engage').textContent=this.value"/>
+      <div class="rating-label">Engagement <span id="v-engage">3</span></div>
+      <input type="range" class="slider" min="1" max="5" value="3" id="sl-engage" oninput="document.getElementById('v-engage').textContent=this.value"/>
     </div>
     <div class="rating-group">
-      <div class="rating-label">Participation <span id="val-part">3</span>/5</div>
-      <input type="range" class="slider" min="1" max="5" value="3" id="sl-part" oninput="document.getElementById('val-part').textContent=this.value"/>
+      <div class="rating-label">Participation <span id="v-part">3</span></div>
+      <input type="range" class="slider" min="1" max="5" value="3" id="sl-part" oninput="document.getElementById('v-part').textContent=this.value"/>
     </div>
     <div class="rating-group">
-      <div class="rating-label">Discipline <span id="val-disc">3</span>/5</div>
-      <input type="range" class="slider" min="1" max="5" value="3" id="sl-disc" oninput="document.getElementById('val-disc').textContent=this.value"/>
+      <div class="rating-label">Discipline <span id="v-disc">3</span></div>
+      <input type="range" class="slider" min="1" max="5" value="3" id="sl-disc" oninput="document.getElementById('v-disc').textContent=this.value"/>
     </div>
-
     <div class="field">
       <label>Comment</label>
-      <textarea class="remark-area" id="class-comment" placeholder="Overall impression of the class..."></textarea>
+      <textarea class="field-input" id="rc-comment" placeholder="Overall impression of this class..."></textarea>
     </div>
-
     <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('class-modal')">Cancel</button>
-      <button class="btn-primary btn-submit pink" onclick="submitClassReview()">Submit Rating</button>
+      <button class="btn-cancel" onclick="closeModal('rate-class-modal')">Cancel</button>
+      <button class="btn btn-primary pink btn-submit" onclick="submitClassReview()">Submit Rating</button>
     </div>
+  </div>
+</div>
+
+<!-- ══════════════ ACHIEVEMENTS MODAL ══════════════ -->
+<div class="modal-overlay" id="ach-modal">
+  <div class="modal ach-modal-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <div class="modal-title">🏆 Achievements & Rewards</div>
+      <button class="btn-ghost" onclick="closeModal('ach-modal')">✕</button>
+    </div>
+    <div class="modal-sub">What top performance unlocks at your college</div>
+    <div id="ach-list"></div>
   </div>
 </div>
 
 <!-- ══════════════ TOAST ══════════════ -->
 <div class="toast" id="toast"></div>
 
-<script>
-// ══════════════════════════════════════
-// SUPABASE CLIENT
-// ══════════════════════════════════════
-const { createClient } = supabase;
-const sb = createClient(
-  'https://cqxezydojmuqloctqihk.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxeGV6eWRvam11cWxvY3RxaWhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3OTQ0ODgsImV4cCI6MjA5MDM3MDQ4OH0.ND6_vqHSE8nkTxgcE_RsaWU3QhtMZJqciCh1a-UKtwI'
-);
-
-// ══════════════════════════════════════
-// STATE
-// ══════════════════════════════════════
-let currentRole = '';
-let currentUser = null;
-let selectedTeacherId = null;
-let selectedClassId = null;
-
-// These will be loaded from Supabase
-let TEACHERS = [];
-let CLASSES = [
-  { id: 1, name: 'CSE-A (2nd Year)', section: 'A', enrolled: 62, rating: null },
-  { id: 2, name: 'CSE-B (2nd Year)', section: 'B', enrolled: 58, rating: null },
-  { id: 3, name: 'CSE Elective (4th Year)', section: 'E', enrolled: 28, rating: null },
-];
-
-// ══════════════════════════════════════
-// NAVIGATION
-// ══════════════════════════════════════
-function goTo(screen) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-' + screen).classList.add('active');
-}
-
-function selectRole(role) {
-  currentRole = role;
-  document.getElementById('auth-title').textContent = role === 'student' ? 'Join as Student' : 'Join as Teacher';
-  document.getElementById('auth-sub').textContent = role === 'student'
-    ? 'Sign in to rate teachers anonymously.'
-    : 'Sign in to rate your classes & view feedback.';
-  document.getElementById('dept-field').style.display = role === 'teacher' ? 'block' : 'none';
-  document.getElementById('login-btn').className = role === 'teacher' ? 'btn-primary pink' : 'btn-primary';
-  document.getElementById('signup-btn').className = role === 'teacher' ? 'btn-primary pink' : 'btn-primary';
-  goTo('auth');
-}
-
-function switchTab(tab) {
-  document.querySelectorAll('.tab-btn').forEach((b, i) => {
-    b.classList.toggle('active', (i === 0) === (tab === 'login'));
-  });
-  document.getElementById('login-fields').style.display = tab === 'login' ? 'block' : 'none';
-  document.getElementById('signup-fields').style.display = tab === 'signup' ? 'block' : 'none';
-}
-
-// ══════════════════════════════════════
-// AUTH (REAL SUPABASE)
-// ══════════════════════════════════════
-async function handleLogin() {
-  const email = document.getElementById('login-email').value.trim();
-  const password = document.getElementById('login-password').value;
-  if (!email || !password) return showToast('Please fill in all fields', true);
-
-  showToast('Signing in...');
-  const { data, error } = await sb.auth.signInWithPassword({ email, password });
-  if (error) return showToast('Login failed: ' + error.message, true);
-
-  // fetch profile from users table
-  const { data: profile } = await sb.from('users').select('*').eq('id', data.user.id).single();
-  if (!profile) return showToast('Profile not found. Please sign up first.', true);
-  if (profile.role !== currentRole) return showToast('Wrong role. Please select ' + profile.role + ' on the home screen.', true);
-
-  await afterLogin(profile);
-}
-
-async function handleSignup() {
-  const name = document.getElementById('signup-name').value.trim();
-  const email = document.getElementById('signup-email').value.trim();
-  const password = document.getElementById('signup-password').value;
-  if (!name || !email || !password) return showToast('Please fill all fields', true);
-
-  showToast('Creating account...');
-  const { data, error } = await sb.auth.signUp({ email, password });
-  if (error) return showToast('Signup failed: ' + error.message, true);
-
-  // insert into users table
-  const { error: profileError } = await sb.from('users').insert({
-    id: data.user.id,
-    name,
-    role: currentRole,
-    email,
-  });
-  if (profileError) return showToast('Profile save failed: ' + profileError.message, true);
-
-  // if teacher, also insert into teachers table
-  if (currentRole === 'teacher') {
-    const dept = document.getElementById('signup-dept').value.trim() || 'General';
-    await sb.from('teachers').insert({ user_id: data.user.id, subject: 'TBD', department: dept });
-  }
-
-  const profile = { id: data.user.id, name, role: currentRole, email };
-  await afterLogin(profile);
-}
-
-async function afterLogin(profile) {
-  currentUser = profile;
-
-  // load teachers from DB
-  const { data: teacherRows } = await sb.from('teachers')
-    .select('id, user_id, subject, department, users(name)');
-
-  TEACHERS = (teacherRows || []).map(t => ({
-    id: t.id,
-    name: t.users?.name || 'Unknown',
-    subject: t.subject,
-    dept: t.department,
-    initials: (t.users?.name || 'XX').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase(),
-    reviews: [],
-  }));
-
-  // load reviews for each teacher
-  for (const t of TEACHERS) {
-    const { data: reviews } = await sb.from('student_reviews')
-      .select('knowledge, clarity, approachability, behaviour, remark')
-      .eq('teacher_id', t.id);
-    t.reviews = (reviews || []).map(r => ({
-      userId: '?',  // anonymous — we don't fetch student_id
-      knowledge: r.knowledge,
-      clarity: r.clarity,
-      approach: r.approachability,
-      behaviour: r.behaviour,
-      remark: r.remark,
-    }));
-  }
-
-  if (profile.role === 'student') {
-    document.getElementById('student-avatar').textContent = profile.name.charAt(0).toUpperCase();
-    document.getElementById('student-name-display').textContent = profile.name;
-    document.getElementById('s-greet').textContent = profile.name.split(' ')[0];
-    renderTeacherGrid();
-    renderMyRatings();
-    goTo('student');
-  } else {
-    // find this teacher's record
-    const myTeacher = TEACHERS.find(t => t.name === profile.name);
-    currentUser.teacherId = myTeacher?.id || null;
-    document.getElementById('teacher-avatar').textContent = profile.name.charAt(0).toUpperCase();
-    document.getElementById('teacher-name-display').textContent = profile.name;
-    document.getElementById('t-greet').textContent = profile.name.split(' ')[0];
-    renderTeacherView();
-    renderClassList();
-    goTo('teacher');
-  }
-  showToast('Welcome, ' + profile.name.split(' ')[0] + '! 👋');
-}
-
-async function logout() {
-  await sb.auth.signOut();
-  currentUser = null;
-  goTo('landing');
-  showToast('Logged out successfully');
-}
-
-// ══════════════════════════════════════
-// STUDENT DASHBOARD
-// ══════════════════════════════════════
-function renderTeacherGrid() {
-  const grid = document.getElementById('teachers-grid');
-  grid.innerHTML = TEACHERS.map(t => {
-    const avg = calcAvg(t);
-    const stars = avg ? starsHtml(avg) : '<span style="color:var(--muted);font-size:12px">No ratings yet</span>';
-    return `
-    <div class="teacher-card" id="tc-${t.id}">
-      <div class="tc-header">
-        <div class="tc-avatar">${t.initials}</div>
-        <div>
-          <div class="tc-name">${t.name}</div>
-          <div class="tc-sub">${t.subject} · ${t.dept}</div>
-        </div>
-      </div>
-      <div class="tc-stars">${stars}</div>
-      ${avg ? `
-      <div class="tc-dims">
-        <div class="dim-pill">Knowledge <span>${avgDim(t,'knowledge')}</span></div>
-        <div class="dim-pill">Clarity <span>${avgDim(t,'clarity')}</span></div>
-        <div class="dim-pill">Approach <span>${avgDim(t,'approach')}</span></div>
-        <div class="dim-pill">Behaviour <span>${avgDim(t,'behaviour')}</span></div>
-      </div>` : `<div style="font-size:12px;color:var(--muted);font-style:italic">Be the first to rate!</div>`}
-      <button class="tc-rate-btn" onclick="openRateModal(${t.id})">+ Rate this teacher</button>
-    </div>`;
-  }).join('');
-}
-
-function calcAvg(teacher) {
-  if (!teacher.reviews.length) return 0;
-  const total = teacher.reviews.reduce((s, r) => s + (r.knowledge + r.clarity + r.approach + r.behaviour) / 4, 0);
-  return (total / teacher.reviews.length).toFixed(1);
-}
-
-function avgDim(teacher, dim) {
-  if (!teacher.reviews.length) return '—';
-  return (teacher.reviews.reduce((s, r) => s + r[dim], 0) / teacher.reviews.length).toFixed(1);
-}
-
-function starsHtml(avg) {
-  const full = Math.round(avg);
-  return Array.from({length:5}, (_,i) =>
-    `<span class="star">${i < full ? '★' : '☆'}</span>`).join('') + `<span style="font-size:12px;color:var(--muted);margin-left:6px">${avg}</span>`;
-}
-
-function renderMyRatings() {
-  const container = document.getElementById('my-ratings-list');
-  const myReviews = [];
-  TEACHERS.forEach(t => {
-    t.reviews.filter(r => r.userId === currentUser.id).forEach(r => {
-      myReviews.push({ teacher: t, review: r });
-    });
-  });
-  if (!myReviews.length) {
-    container.innerHTML = '<div style="color:var(--muted);font-size:14px;padding:16px 0;">No reviews yet. Rate a teacher above!</div>';
-    return;
-  }
-  container.innerHTML = myReviews.map(({ teacher, review }) => `
-    <div class="rating-row">
-      <div class="rating-row-info">
-        <div class="rating-row-name">${teacher.name} — ${teacher.subject}</div>
-        ${review.remark ? `<div class="rating-row-remark">"${review.remark}"</div>` : ''}
-      </div>
-      <div class="rating-row-scores">
-        <div class="mini-score">Knowledge <b>${review.knowledge}</b></div>
-        <div class="mini-score">Clarity <b>${review.clarity}</b></div>
-        <div class="mini-score">Approach <b>${review.approach}</b></div>
-        <div class="mini-score">Behaviour <b>${review.behaviour}</b></div>
-      </div>
-    </div>`).join('');
-  document.getElementById('s-stat-reviews').textContent = myReviews.length;
-}
-
-// ══════════════════════════════════════
-// RATE TEACHER MODAL
-// ══════════════════════════════════════
-function openRateModal(teacherId) {
-  selectedTeacherId = teacherId;
-  const teacher = TEACHERS.find(t => t.id === teacherId);
-  document.getElementById('modal-teacher-name').textContent = 'Rate ' + teacher.name;
-  ['knowledge','clarity','approach','behaviour'].forEach(d => {
-    const sl = document.getElementById('sl-' + d);
-    sl.value = 3;
-    document.getElementById('val-' + d).textContent = '3';
-  });
-  document.getElementById('remark-input').value = '';
-  document.getElementById('rate-modal').classList.add('open');
-}
-
-async function submitStudentReview() {
-  const knowledge  = +document.getElementById('sl-knowledge').value;
-  const clarity    = +document.getElementById('sl-clarity').value;
-  const approach   = +document.getElementById('sl-approach').value;
-  const behaviour  = +document.getElementById('sl-behaviour').value;
-  const remark     = document.getElementById('remark-input').value.trim();
-
-  showToast('Submitting...');
-
-  const { error } = await sb.from('student_reviews').insert({
-    teacher_id:     selectedTeacherId,
-    student_id:     currentUser.id,
-    knowledge,
-    clarity,
-    approachability: approach,
-    behaviour,
-    remark: remark || null,
-  });
-
-  if (error) return showToast('Failed: ' + error.message, true);
-
-  // update local state so UI refreshes instantly
-  const teacher = TEACHERS.find(t => t.id === selectedTeacherId);
-  teacher.reviews = teacher.reviews.filter(r => r.userId !== currentUser.id);
-  teacher.reviews.push({ userId: currentUser.id, knowledge, clarity, approach, behaviour, remark });
-
-  closeModal('rate-modal');
-  renderTeacherGrid();
-  renderMyRatings();
-  showToast('Review submitted anonymously ✓');
-}
-
-// ══════════════════════════════════════
-// TEACHER DASHBOARD
-// ══════════════════════════════════════
-function renderTeacherView() {
-  const teacher = TEACHERS.find(t => t.id === currentUser.teacherId);
-  const reviews = teacher ? teacher.reviews : [];
-
-  document.getElementById('t-stat-reviews').textContent = reviews.length;
-
-  const dims = ['knowledge','clarity','approach','behaviour'];
-  const labels = { knowledge:'Subject Knowledge', clarity:'Teaching Clarity', approach:'Approachability', behaviour:'Behaviour' };
-
-  if (!reviews.length) {
-    document.getElementById('teacher-dim-scores').innerHTML = '<div style="color:var(--muted);font-size:13px;grid-column:1/-1">No student reviews yet.</div>';
-    document.getElementById('t-stat-avg').textContent = '—';
-  } else {
-    const overallAvg = (reviews.reduce((s,r) => s+(r.knowledge+r.clarity+r.approach+r.behaviour)/4,0)/reviews.length).toFixed(1);
-    document.getElementById('t-stat-avg').textContent = overallAvg;
-
-    document.getElementById('teacher-dim-scores').innerHTML = dims.map(d => {
-      const avg = (reviews.reduce((s,r) => s+r[d],0)/reviews.length).toFixed(1);
-      const pct = (avg/5)*100;
-      return `
-      <div style="background:var(--bg);border-radius:10px;padding:14px;">
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">${labels[d]}</div>
-        <div style="font-family:var(--font-head);font-size:28px;font-weight:800;margin-bottom:8px">${avg}</div>
-        <div style="height:4px;background:var(--border);border-radius:2px">
-          <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:2px;transition:width 1s ease"></div>
-        </div>
-      </div>`;
-    }).join('');
-
-    const remarks = reviews.filter(r => r.remark);
-    document.getElementById('teacher-remarks-list').innerHTML = remarks.length
-      ? '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Student remarks</div>' +
-        remarks.map(r => `<div style="background:var(--bg);border-left:2px solid var(--accent);padding:10px 14px;border-radius:0 8px 8px 0;margin-bottom:8px;font-size:13px;color:var(--text)">"${r.remark}"</div>`).join('')
-      : '';
-  }
-}
-
-function renderClassList() {
-  document.getElementById('class-list').innerHTML = CLASSES.map(c => {
-    const r = c.rating;
-    return `
-    <div class="class-item">
-      <div class="class-info">
-        <div class="class-name">${c.name}</div>
-        <div class="class-meta">${c.enrolled} students enrolled</div>
-      </div>
-      ${r ? `
-      <div class="class-scores">
-        <div class="score-badge"><strong>${r.engage}</strong>Engage</div>
-        <div class="score-badge"><strong>${r.part}</strong>Particip.</div>
-        <div class="score-badge"><strong>${r.disc}</strong>Discipline</div>
-      </div>` : '<div style="font-size:12px;color:var(--muted)">Not rated yet</div>'}
-      <button class="btn-rate-class" onclick="openClassModal(${c.id})">
-        ${r ? '✏️ Update' : '+ Rate class'}
-      </button>
-    </div>`;
-  }).join('');
-}
-
-function openClassModal(classId) {
-  selectedClassId = classId;
-  const cls = CLASSES.find(c => c.id === classId);
-  document.getElementById('modal-class-name').textContent = 'Rate ' + cls.name;
-  ['engage','part','disc'].forEach(d => {
-    const sl = document.getElementById('sl-' + d);
-    sl.value = cls.rating ? cls.rating[d] : 3;
-    document.getElementById('val-' + d).textContent = sl.value;
-  });
-  document.getElementById('class-comment').value = cls.rating?.comment || '';
-  document.getElementById('class-modal').classList.add('open');
-}
-
-function submitClassReview() {
-  const cls = CLASSES.find(c => c.id === selectedClassId);
-  cls.rating = {
-    engage: +document.getElementById('sl-engage').value,
-    part: +document.getElementById('sl-part').value,
-    disc: +document.getElementById('sl-disc').value,
-    comment: document.getElementById('class-comment').value.trim(),
-    teacher: currentUser.name,
-    updatedAt: new Date().toISOString(),
-  };
-  closeModal('class-modal');
-  renderClassList();
-  showToast('Class rating submitted ✓');
-}
-
-// ══════════════════════════════════════
-// UTILS
-// ══════════════════════════════════════
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-}
-
-function showToast(msg, isError = false) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast' + (isError ? ' error' : '');
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3200);
-}
-
-// Close modal on overlay click
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', e => {
-    if (e.target === overlay) overlay.classList.remove('open');
-  });
-});
-</script>
+<script src="app.js"></script>
 </body>
 </html>
